@@ -1,0 +1,182 @@
+{
+  "title": "Job Application Tracker",
+  "description": "Track your job applications automatically with Gmail integration",
+  "properties": {
+    "Company": {
+      "type": "title",
+      "description": "Company name (required)"
+    },
+    "Position": {
+      "type": "rich_text",
+      "description": "Job title/position"
+    },
+    "Status": {
+      "type": "select",
+      "options": [
+        { "name": "Applied", "color": "blue" },
+        { "name": "Screening", "color": "purple" },
+        { "name": "Interview", "color": "yellow" },
+        { "name": "Offer", "color": "green" },
+        { "name": "Accepted", "color": "green" },
+        { "name": "Rejected", "color": "red" },
+        { "name": "Ghosted", "color": "gray" },
+        { "name": "Withdrawn", "color": "gray" }
+      ],
+      "description": "Current status of the application"
+    },
+    "Application Date": {
+      "type": "date",
+      "description": "When you applied"
+    },
+    "Source": {
+      "type": "select",
+      "options": [
+        { "name": "LinkedIn", "color": "blue" },
+        { "name": "Indeed", "color": "purple" },
+        { "name": "Glassdoor", "color": "green" },
+        { "name": "Company Website", "color": "orange" },
+        { "name": "Referral", "color": "pink" },
+        { "name": "Recruiter", "color": "yellow" },
+        { "name": "Other", "color": "gray" }
+      ],
+      "description": "Where you found/applied to the job"
+    },
+    "Job URL": {
+      "type": "url",
+      "description": "Link to original job posting"
+    },
+    "Location": {
+      "type": "rich_text",
+      "description": "City + Remote/Hybrid/Onsite"
+    },
+    "Salary Min": {
+      "type": "number",
+      "format": "number",
+      "description": "Lower bound of salary range"
+    },
+    "Salary Max": {
+      "type": "number",
+      "format": "number",
+      "description": "Upper bound of salary range"
+    },
+    "Salary Type": {
+      "type": "select",
+      "options": [
+        { "name": "Annual", "color": "green" },
+        { "name": "Hourly", "color": "blue" },
+        { "name": "Monthly", "color": "purple" }
+      ],
+      "description": "Annual, hourly, or monthly salary"
+    },
+    "Currency": {
+      "type": "select",
+      "options": [
+        { "name": "USD", "color": "green" },
+        { "name": "EUR", "color": "blue" },
+        { "name": "GBP", "color": "purple" },
+        { "name": "CAD", "color": "red" },
+        { "name": "AUD", "color": "orange" },
+        { "name": "Other", "color": "gray" }
+      ],
+      "description": "Salary currency"
+    },
+    "Equity": {
+      "type": "rich_text",
+      "description": "Stock options/RSUs if mentioned"
+    },
+    "Benefits Notes": {
+      "type": "rich_text",
+      "description": "Notable benefits"
+    },
+    "Recruiter Name": {
+      "type": "rich_text",
+      "description": "Primary contact name"
+    },
+    "Recruiter Email": {
+      "type": "email",
+      "description": "Contact email for follow-ups"
+    },
+    "Recruiter LinkedIn": {
+      "type": "url",
+      "description": "Recruiter's LinkedIn profile"
+    },
+    "Hiring Manager": {
+      "type": "rich_text",
+      "description": "Hiring manager name if known"
+    },
+    "Company Research": {
+      "type": "rich_text",
+      "description": "What they do, recent news, culture notes"
+    },
+    "Interview Prep": {
+      "type": "rich_text",
+      "description": "Questions to ask, topics to review"
+    },
+    "Interview Notes": {
+      "type": "rich_text",
+      "description": "Post-interview notes and impressions"
+    },
+    "Next Step": {
+      "type": "rich_text",
+      "description": "What's the next action to take"
+    },
+    "Next Step Date": {
+      "type": "date",
+      "description": "When to follow up or next deadline"
+    },
+    "Email Subject": {
+      "type": "rich_text",
+      "description": "Original confirmation email subject (auto-filled)"
+    },
+    "Created": {
+      "type": "created_time",
+      "description": "Auto-timestamp when entry was created"
+    },
+    "Last Updated": {
+      "type": "last_edited_time",
+      "description": "Auto-timestamp when entry was last modified"
+    }
+  },
+  "views": {
+    "board": {
+      "name": "Pipeline",
+      "type": "board",
+      "group_by": "Status",
+      "description": "Kanban board grouped by application status"
+    },
+    "table": {
+      "name": "All Applications",
+      "type": "table",
+      "sort": [
+        { "property": "Application Date", "direction": "descending" }
+      ],
+      "description": "Table view sorted by most recent"
+    },
+    "calendar": {
+      "name": "Follow-ups",
+      "type": "calendar",
+      "date_property": "Next Step Date",
+      "description": "Calendar view of follow-up dates"
+    }
+  },
+  "suggested_filters": [
+    {
+      "name": "Active Applications",
+      "filter": {
+        "property": "Status",
+        "select": {
+          "does_not_equal": "Rejected"
+        }
+      }
+    },
+    {
+      "name": "Needs Follow-up",
+      "filter": {
+        "and": [
+          { "property": "Status", "select": { "equals": "Applied" } },
+          { "property": "Application Date", "date": { "before": "1 week ago" } }
+        ]
+      }
+    }
+  ]
+}
