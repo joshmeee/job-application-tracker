@@ -1,0 +1,36 @@
+name: Greetings
+
+on: [pull_request_target, issues]
+
+jobs:
+  greeting:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+    - uses: actions/first-interaction@v1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        issue-message: |
+          👋 Thanks for opening your first issue!
+
+          We appreciate you taking the time to contribute to making job searching easier for everyone.
+
+          A maintainer will review your issue soon. In the meantime:
+          - Make sure you've included all relevant details
+          - Check if there are similar existing issues
+          - Feel free to add more context if needed
+
+          If this helped you land a job, consider giving us a ⭐!
+        pr-message: |
+          🎉 Thanks for your first pull request!
+
+          We're excited to review your contribution. A maintainer will take a look soon.
+
+          Please make sure:
+          - Your PR description is clear
+          - You've tested your changes
+          - Documentation is updated if needed
+
+          Thanks for helping make job tracking better for everyone! 🚀

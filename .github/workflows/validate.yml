@@ -1,0 +1,45 @@
+name: Validate
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Validate JSON files
+      run: |
+        for file in *.json; do
+          if [ -f "$file" ]; then
+            echo "Validating $file..."
+            python3 -m json.tool "$file" > /dev/null
+          fi
+        done
+
+    - name: Check for TODO comments
+      run: |
+        echo "Checking for unresolved TODOs..."
+        grep -rn "TODO" Code.gs || echo "No TODOs found"
+
+    - name: Validate README exists
+      run: |
+        if [ ! -f README.md ]; then
+          echo "ERROR: README.md is missing"
+          exit 1
+        fi
+        echo "README.md found ✓"
+
+    - name: Check LICENSE exists
+      run: |
+        if [ ! -f LICENSE ]; then
+          echo "ERROR: LICENSE is missing"
+          exit 1
+        fi
+        echo "LICENSE found ✓"
