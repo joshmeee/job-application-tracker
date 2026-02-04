@@ -1,0 +1,55 @@
+================================================================================
+QUICK FIX: ADD 30-DAY SCAN TO YOUR GOOGLE APPS SCRIPT
+================================================================================
+
+COPY EVERYTHING BELOW THIS LINE AND PASTE AT THE BOTTOM OF YOUR Code.gs FILE
+
+--------------------------------------------------------------------------------
+
+/**
+ * Scan last 30 days for job application and follow-up emails
+ * RUN THIS to catch up on all applications from the last month
+ */
+function scan30Days() {
+  Logger.log('═══════════════════════════════════════════════');
+  Logger.log('   SCANNING LAST 30 DAYS OF EMAILS');
+  Logger.log('═══════════════════════════════════════════════');
+  Logger.log('This may take 1-2 minutes...');
+  Logger.log('');
+
+  // Set scan range to 30 days (720 hours)
+  PropertiesService.getScriptProperties().setProperty('HOURS_TO_SCAN_TEMP', '720');
+
+  // Run the scan
+  scanEmailsAndCreateEntries();
+
+  // Restore original
+  PropertiesService.getScriptProperties().deleteProperty('HOURS_TO_SCAN_TEMP');
+
+  Logger.log('');
+  Logger.log('═══════════════════════════════════════════════');
+  Logger.log('   30-DAY SCAN COMPLETE!');
+  Logger.log('═══════════════════════════════════════════════');
+  Logger.log('Check your Notion database for all entries.');
+}
+
+--------------------------------------------------------------------------------
+
+INSTRUCTIONS:
+
+1. Open your browser and go to: https://script.google.com
+2. Click on your "Job Application Tracker" project
+3. Scroll to the BOTTOM of the Code.gs file
+4. Copy the function above (the scan30Days function)
+5. Paste it at the bottom
+6. Click Save (💾 icon or Ctrl+S / Cmd+S)
+7. Refresh the page (F5 or Ctrl+R / Cmd+R)
+8. At the top, click the function dropdown
+9. Select "scan30Days"
+10. Click the Run button (▶ play icon)
+11. Wait 1-2 minutes
+12. Check the Execution log at the bottom for results
+
+DONE! All your applications from the last 30 days should now be in Notion.
+
+================================================================================
