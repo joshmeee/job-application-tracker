@@ -15,11 +15,13 @@
 
 function getConfig() {
   const props = PropertiesService.getScriptProperties();
+  // Check for temporary override (used by manualScan)
+  const hoursToScan = props.getProperty('HOURS_TO_SCAN_TEMP') || '24';
   return {
     NOTION_TOKEN: props.getProperty('NOTION_TOKEN'),
     NOTION_DATABASE_ID: props.getProperty('NOTION_DATABASE_ID'),
     PROCESSED_LABEL: 'JobTracker/Processed',
-    HOURS_TO_SCAN: 24 // How far back to look for emails
+    HOURS_TO_SCAN: parseInt(hoursToScan, 10) // How far back to look for emails
   };
 }
 
@@ -1134,47 +1136,6 @@ function createNotionEntry(data, config) {
 /**
  * Check if an entry already exists (to avoid duplicates)
  */
-function checkDuplicateEntry(company, position, date, config) {
-  const url = `https://api.notion.com/v1/databases/${config.NOTION_DATABASE_ID}/query`;
-
-  const dateStr = Utilities.formatDate(date, Session.getScriptTimeZone(), 'yyyy-MM-dd');
-
-  const payload = {
-    filter: {
-      and: [
-        {
-          property: 'Company',
-          title: { equals: company }
-        },
-        {
-          property: 'Application Date',
-          date: { equals: dateStr }
-        }
-      ]
-    }
-  };
-
-  const options = {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${config.NOTION_TOKEN}`,
-      'Content-Type': 'application/json',
-      'Notion-Version': '2022-06-28'
-    },
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  };
-
-  try {
-    const response = UrlFetchApp.fetch(url, options);
-    const data = JSON.parse(response.getContentText());
-    return data.results && data.results.length > 0;
-  } catch (error) {
-    Logger.log(`Error checking duplicates: ${error}`);
-    return false;
-  }
-}
-
 // ============================================
 // SETUP & TRIGGER FUNCTIONS
 // ============================================
@@ -1820,8 +1781,8 @@ function checkNotionSchema() {
 
     Logger.log('\n=== REQUIRED FOR SCRIPT ===');
     Logger.log('The script needs these properties:');
-    Logger.log('  - Company (type: title)');
-    Logger.log('  - Position (type: rich_text)');
+    Logger.log('  - Position (type: title)');
+    Logger.log('  - Company (type: rich_text)');
     Logger.log('  - Status (type: select) with "Applied" option');
     Logger.log('  - Application Date (type: date)');
     Logger.log('  - Source (type: select)');

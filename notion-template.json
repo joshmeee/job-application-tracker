@@ -2,13 +2,13 @@
   "title": "Job Application Tracker",
   "description": "Track your job applications automatically with Gmail integration",
   "properties": {
-    "Company": {
-      "type": "title",
-      "description": "Company name (required)"
-    },
     "Position": {
+      "type": "title",
+      "description": "Job title/position (required)"
+    },
+    "Company": {
       "type": "rich_text",
-      "description": "Job title/position"
+      "description": "Company name"
     },
     "Status": {
       "type": "select",
