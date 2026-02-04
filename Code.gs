@@ -676,6 +676,118 @@ const EMAIL_PATTERNS = [
 ];
 
 // ============================================
+// FOLLOW-UP EMAIL DETECTION
+// ============================================
+
+/**
+ * Detect if an email is a follow-up (interview, rejection, offer)
+ * Returns { type: 'interview'|'rejection'|'offer'|null, company: string|null }
+ */
+function detectFollowUpEmail(subject, body, from) {
+  const subjectLower = subject.toLowerCase();
+  const bodyLower = body ? body.toLowerCase() : '';
+  const combinedText = subjectLower + ' ' + bodyLower;
+
+  // Extract company name from sender domain or signature
+  let company = extractCompanyFromEmail(from, body);
+
+  // INTERVIEW DETECTION
+  const interviewKeywords = [
+    'interview', 'schedule', 'next steps', 'phone screen', 'screening',
+    'technical interview', 'phone call', 'video call', 'meeting request',
+    'chat with', 'speak with', 'connect with you', 'availability',
+    'calendly', 'schedule time', 'onsite', 'on-site', 'hiring manager',
+    'recruiter would like', 'move forward', 'next round'
+  ];
+
+  for (const keyword of interviewKeywords) {
+    if (combinedText.includes(keyword)) {
+      // Make sure it's not a rejection disguised with these words
+      if (!isRejectionEmail(combinedText)) {
+        return { type: 'interview', company: company };
+      }
+    }
+  }
+
+  // OFFER DETECTION
+  const offerKeywords = [
+    'offer', 'congratulations', 'pleased to offer', 'extend an offer',
+    'offer letter', 'compensation package', 'accept the position',
+    'welcome to the team', 'welcome aboard', 'job offer', 'employment offer',
+    'offer of employment', 'excited to have you'
+  ];
+
+  for (const keyword of offerKeywords) {
+    if (combinedText.includes(keyword)) {
+      return { type: 'offer', company: company };
+    }
+  }
+
+  // REJECTION DETECTION
+  if (isRejectionEmail(combinedText)) {
+    return { type: 'rejection', company: company };
+  }
+
+  return { type: null, company: null };
+}
+
+/**
+ * Check if email contains rejection language
+ */
+function isRejectionEmail(combinedTextLower) {
+  const rejectionKeywords = [
+    'unfortunately', 'not moving forward', 'decided not to', 'other candidates',
+    'will not be moving', 'not be moving forward', 'pursue other', 'not selected',
+    'not a match', 'different direction', 'decline', 'regret to inform',
+    'chosen to move forward with other', 'have decided to pursue',
+    'more qualified candidates', 'better fit', 'no longer considering',
+    'application status: rejected', 'application was not selected'
+  ];
+
+  for (const keyword of rejectionKeywords) {
+    if (combinedTextLower.includes(keyword)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Extract company name from email sender or body signature
+ */
+function extractCompanyFromEmail(from, body) {
+  // Try to extract from domain
+  const domainMatch = from.match(/@([^.]+)\./);
+  if (domainMatch) {
+    let domain = domainMatch[1];
+    // Skip common email providers and ATS domains
+    const skipDomains = ['gmail', 'yahoo', 'outlook', 'hotmail', 'greenhouse', 'lever', 'workday', 'smartrecruiters', 'icims', 'jobvite', 'bamboohr', 'ashby', 'mail'];
+    if (!skipDomains.includes(domain.toLowerCase())) {
+      // Capitalize first letter
+      return domain.charAt(0).toUpperCase() + domain.slice(1);
+    }
+  }
+
+  // Try to extract from body signature
+  if (body) {
+    // Look for patterns like "Company Name Recruiting Team" or "From the XYZ Team"
+    let match = body.match(/(?:from|regards|sincerely|thanks|best)[\s,]+(?:the\s+)?([A-Z][A-Za-z0-9\s&]+?)\s+(?:team|recruiting|talent|hr|people)/i);
+    if (match && match[1].trim().length > 2) {
+      return match[1].trim();
+    }
+
+    // Look for company name in signature blocks
+    match = body.match(/\n([A-Z][A-Za-z0-9\s&]+?)\s*\n.*?(?:recruiting|talent|hr|people)/i);
+    if (match && match[1].trim().length > 2) {
+      return match[1].trim();
+    }
+  }
+
+  return null;
+}
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
 
@@ -844,13 +956,20 @@ function scanEmailsAndCreateEntries() {
   const hoursAgo = new Date(now.getTime() - (config.HOURS_TO_SCAN * 60 * 60 * 1000));
   const searchDate = Utilities.formatDate(hoursAgo, Session.getScriptTimeZone(), 'yyyy/MM/dd');
 
-  // Search for potential job application emails
+  // Search for potential job application emails AND follow-up emails
   // Improved search query with more keywords and ATS domains
   const searchQuery = `after:${searchDate} -label:${config.PROCESSED_LABEL} (` +
+    // Application confirmations
     `subject:"application" OR subject:"applied" OR ` +
     `subject:"thank you for applying" OR subject:"thanks for applying" OR ` +
     `subject:"we received your" OR subject:"application confirmation" OR ` +
     `subject:"application submitted" OR subject:"application received" OR ` +
+    // Follow-up emails: interviews, rejections, offers
+    `subject:"interview" OR subject:"schedule" OR subject:"next steps" OR ` +
+    `subject:"phone screen" OR subject:"screening" OR ` +
+    `subject:"unfortunately" OR subject:"not moving forward" OR ` +
+    `subject:"offer" OR subject:"congratulations" OR ` +
+    // ATS and job board domains
     `from:greenhouse OR from:lever.co OR from:workday OR ` +
     `from:smartrecruiters OR from:icims OR from:ashby OR ` +
     `from:jobvite OR from:bamboohr OR from:ziprecruiter OR ` +
@@ -885,6 +1004,23 @@ function scanEmailsAndCreateEntries() {
           entriesCreated++;
           // Label as processed
           thread.addLabel(processedLabel);
+        }
+      } else {
+        // Check if this is a follow-up email (interview, rejection, offer)
+        const body = message.getPlainBody();
+        const followUp = detectFollowUpEmail(subject, body, from);
+
+        if (followUp.type) {
+          Logger.log(`  ✓ FOLLOW-UP DETECTED - Type: ${followUp.type}, Company: ${followUp.company}`);
+
+          // Try to find and update existing Notion entry
+          const updated = handleFollowUpEmail(followUp, config);
+
+          if (updated) {
+            entriesCreated++; // Count updates as well
+            // Label as processed
+            thread.addLabel(processedLabel);
+          }
         }
       }
     }
@@ -1690,6 +1826,44 @@ function updateNotionEntry(pageId, data, config) {
   } catch (error) {
     Logger.log(`Error updating entry: ${error}`);
   }
+}
+
+/**
+ * Handle follow-up emails by finding and updating existing Notion entries
+ * Returns true if an entry was found and updated
+ */
+function handleFollowUpEmail(followUp, config) {
+  if (!followUp.company) {
+    Logger.log(`  → Cannot update: no company name detected`);
+    return false;
+  }
+
+  // Find existing entry by company name
+  const existingEntry = findExistingEntry(followUp.company, config);
+
+  if (!existingEntry) {
+    Logger.log(`  → No existing entry found for company: ${followUp.company}`);
+    return false;
+  }
+
+  // Map follow-up type to Notion status
+  const statusMap = {
+    'interview': 'Interview',
+    'rejection': 'Rejected',
+    'offer': 'Offer'
+  };
+
+  const newStatus = statusMap[followUp.type];
+  if (!newStatus) {
+    Logger.log(`  → Unknown follow-up type: ${followUp.type}`);
+    return false;
+  }
+
+  // Update the entry
+  Logger.log(`  → Updating entry to status: ${newStatus}`);
+  updateNotionEntry(existingEntry.id, { status: newStatus }, config);
+
+  return true;
 }
 
 /**
