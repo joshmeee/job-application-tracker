@@ -1384,6 +1384,43 @@ function manualScan() {
 }
 
 /**
+ * Scan last 30 days for job application and follow-up emails
+ *
+ * RUN THIS to do a historical scan and catch up on older applications.
+ * This will process ALL emails from the last 30 days, including archived ones.
+ *
+ * Instructions:
+ * 1. Select "scan30Days" from the function dropdown at the top
+ * 2. Click Run (▶) button
+ * 3. Check the Execution log to see progress
+ * 4. Wait for it to complete (may take 1-2 minutes)
+ * 5. Check your Notion database - all applications should now be there!
+ */
+function scan30Days() {
+  Logger.log('═══════════════════════════════════════════════');
+  Logger.log('   SCANNING LAST 30 DAYS OF EMAILS');
+  Logger.log('═══════════════════════════════════════════════');
+  Logger.log('This may take 1-2 minutes...');
+  Logger.log('');
+
+  // Set scan range to 30 days (720 hours)
+  PropertiesService.getScriptProperties().setProperty('HOURS_TO_SCAN_TEMP', '720');
+
+  // Run the scan
+  scanEmailsAndCreateEntries();
+
+  // Restore original
+  PropertiesService.getScriptProperties().deleteProperty('HOURS_TO_SCAN_TEMP');
+
+  Logger.log('');
+  Logger.log('═══════════════════════════════════════════════');
+  Logger.log('   30-DAY SCAN COMPLETE!');
+  Logger.log('═══════════════════════════════════════════════');
+  Logger.log('Check your Notion database for all entries.');
+  Logger.log('Run getMyNotionURL() to get the link.');
+}
+
+/**
  * Remove the processed label from recent emails to re-scan them
  */
 function clearProcessedLabels() {
